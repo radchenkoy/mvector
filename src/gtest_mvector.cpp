@@ -1,4 +1,6 @@
 #include <numeric>
+#include <chrono>
+#include <vector>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "mvector.h"
@@ -9,6 +11,7 @@
 // 4. Capacity                         ----------
 // 5. Modifiers                        ----------
 // 6. Iterator                         ----------
+// 7. Chrono                           ----------
 
 
 // 1. Mvector<int> construction        ----------
@@ -229,6 +232,34 @@ TEST_F(MvectorIteratorTest, mv1_fill_range)
 	EXPECT_EQ(mv1[50], 50);
 }
 
+
+// 7. Chrono                           ----------
+
+//class MvectorCronoTest : public ::testing::Test {
+// protected:
+//	MvectorCronoTest()
+//	: mv1(1000000) {}
+//
+//	Mvector<int> mv1;
+//};
+
+
+TEST(MvectorChronoTest, mv1_compare_with_std_vector)
+{
+	auto start1  = std::chrono::steady_clock::now();
+	Mvector<int> mv1(1000000);
+	std::iota(mv1.begin(), mv1.end(), 0);
+	auto stop1 = std::chrono::steady_clock::now();
+	auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(stop1 - start1);
+
+	auto start2  = std::chrono::steady_clock::now();
+	std::vector<int> sv1(1000000);
+	std::iota(sv1.begin(), sv1.end(), 0);
+	auto stop2 = std::chrono::steady_clock::now();
+	auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(stop2 - start2);
+
+	EXPECT_LE(elapsed1, elapsed2);
+}
 
 
 int main(int argc, char **argv) {
