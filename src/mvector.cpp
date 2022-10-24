@@ -32,7 +32,7 @@ public:
 
 using namespace std;
 
-int main(int argc, char **argv)
+int main1(int argc, char **argv)
 {
     //  check creation and size
     // 1 fundamental type

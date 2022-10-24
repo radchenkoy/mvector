@@ -189,7 +189,7 @@ struct Mtraits
 };
 
 
-struct M_POD_Type_Traits {
+struct M_FND_Type_Traits {
   enum {
     has_trivial_ctor    = 1,
     has_trivial_copy    = 1,
@@ -199,7 +199,7 @@ struct M_POD_Type_Traits {
 };
 
 template<typename T>
-struct M_POD_traits
+struct M_FND_traits
 {
   typedef T         value_type;
   typedef T&        reference;
@@ -209,15 +209,15 @@ struct M_POD_traits
 };
 
 #define FTYPE_TRAITS_SPECIALIZE(T)                                              \
-        template<> struct M_Type_Traits<T>          : M_POD_Type_Traits     {}; \
-        template<> struct M_Type_Traits<T*>         : M_POD_Type_Traits     {}; \
-        template<> struct M_Type_Traits<const T*>   : M_POD_Type_Traits     {}; \
-        template<> struct M_Type_Traits<T**>        : M_POD_Type_Traits     {}; \
-        template<> struct M_Type_Traits<T* const *> : M_POD_Type_Traits     {}; \
-        template<> struct M_Type_Traits<const T**>  : M_POD_Type_Traits     {}; \
-        template<> struct Mtraits<T>                : M_POD_traits<T>       {}; \
-        template<> struct Mtraits<T*>               : M_POD_traits<T*>      {}; \
-        template<> struct Mtraits<T**>              : M_POD_traits<T**>     {}
+        template<> struct M_Type_Traits<T>          : M_FND_Type_Traits     {}; \
+        template<> struct M_Type_Traits<T*>         : M_FND_Type_Traits     {}; \
+        template<> struct M_Type_Traits<const T*>   : M_FND_Type_Traits     {}; \
+        template<> struct M_Type_Traits<T**>        : M_FND_Type_Traits     {}; \
+        template<> struct M_Type_Traits<T* const *> : M_FND_Type_Traits     {}; \
+        template<> struct M_Type_Traits<const T**>  : M_FND_Type_Traits     {}; \
+        template<> struct Mtraits<T>                : M_FND_traits<T>       {}; \
+        template<> struct Mtraits<T*>               : M_FND_traits<T*>      {}; \
+        template<> struct Mtraits<T**>              : M_FND_traits<T**>     {}
 
 FTYPE_TRAITS_SPECIALIZE(char);
 FTYPE_TRAITS_SPECIALIZE(unsigned char);
@@ -330,7 +330,7 @@ public:
       __m_uninitialized_copy_n(buffer_, src.buffer_, size_);
     }
 
-    Mvector (const std::initializer_list<int> &list)
+    Mvector (const std::initializer_list<T> &list)
     : Mvector(list.size())
     {
         int count = 0;
