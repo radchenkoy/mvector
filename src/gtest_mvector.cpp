@@ -243,20 +243,22 @@ TEST_F(MvectorIteratorTest, mv1_fill_range)
 //	Mvector<int> mv1;
 //};
 
-
+#include <iostream>
 TEST(MvectorChronoTest, mv1_compare_with_std_vector)
 {
+	auto start2  = std::chrono::steady_clock::now();
+	std::vector<int> sv1(20000000);
+	std::iota(sv1.begin(), sv1.end(), 0);
+	auto stop2 = std::chrono::steady_clock::now();
+	auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(stop2 - start2);
+
 	auto start1  = std::chrono::steady_clock::now();
-	Mvector<int> mv1(1000000);
+	Mvector<int> mv1(20000000);
 	std::iota(mv1.begin(), mv1.end(), 0);
 	auto stop1 = std::chrono::steady_clock::now();
 	auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(stop1 - start1);
 
-	auto start2  = std::chrono::steady_clock::now();
-	std::vector<int> sv1(1000000);
-	std::iota(sv1.begin(), sv1.end(), 0);
-	auto stop2 = std::chrono::steady_clock::now();
-	auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(stop2 - start2);
+	std::cout << "\n -------- " << elapsed1.count() << " ---- "  << elapsed2.count() << " -----\n\n";
 
 	EXPECT_LE(elapsed1, elapsed2);
 }
