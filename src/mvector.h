@@ -100,17 +100,21 @@ struct __m_uninitialized_ops
 
   template <typename T>
   static void move_n(T* dest, T* first, size_t n){
-    if (dest < first){
-      while (n--){
+    if (dest < first)
+    {
+      while (n--)
+      {
         construct(dest++, *first);
         destruct(first++);
       }
     }
-    else {
+    else
+    {
       dest += n;
       first += n;
 
-      while (n--){
+      while (n--)
+      {
         construct(--dest, *(--first));
         destruct(first);
       }
@@ -252,9 +256,17 @@ inline void __m_uninitialized_fill(T* first, T* last, typename Mtraits<T>::param
 }
 
 template <typename T>
-inline void __m_uninitialized_move_n(T* dest, T* first, size_t n){
+inline void __m_uninitialized_move_n(T* dest, T* first, size_t n)
+{
   //TODO: assert dest != first
   __m_uninitialized_ops<M_Type_Traits<T>::has_trivial_copy>::move_n(dest, first, n);
+}
+
+template <typename T>
+inline void __m_uninitialized_move(T* dest, T* first, T* last)
+{
+  //TODO: assert(first <= last);
+  __m_uninitialized_move_n(dest, first, last - first);
 }
 
 template <typename T>
@@ -366,6 +378,36 @@ public:
     reference   operator[](size_t idx)       { return *(buffer_ + idx); } //TODO: check bounder
     retval_type operator[](size_t idx) const { return *(buffer_ + idx); }
 
+    template <typename K>
+    class Iterator
+    {
+        K* cur;
+    public:
+        Iterator (K* cur_) : cur{cur_} {}
+
+        K* operator+ (int n) { return (cur + n); }
+        K* operator- (int n) { return (cur - n); }
+
+        K& operator++ (int) { return *cur++; }
+        K& operator-- (int) { return *cur--; }
+        K& operator++ ()    { return *++cur; }
+        K& operator-- ()    { return *--cur; }
+
+        bool operator!= (const Iterator& it) {return cur != it.cur; }
+        bool operator== (const Iterator& it) {return cur == it.cur; }
+        K& operator* () { return *cur; }
+        K* get_data()   { return cur; }
+
+    };
+
+    typedef Iterator<value_type> iterator;
+    typedef Iterator<const value_type> const_iterator;
+
+    iterator begin()              { return iterator(buffer_); }
+    iterator end()                { return iterator(buffer_ + size_); }
+    const_iterator cbegin() const { return const_iterator(buffer_); }
+    const_iterator cend()   const { return const_iterator(buffer_ + size_);}
+
     //Capacity
     size_t size()     const { return size_; }
     size_t capacity() const { return capacity_; }
@@ -376,8 +418,17 @@ public:
       if (new_capacity > capacity_)
       {
         capacity_ = new_capacity;
-        enlarge();
+        change_capacity_ge_sz();
       }
+    }
+
+    void shrink_to_fit()
+    {
+        if (size_ < capacity_)
+        {
+          capacity_ = size_;
+          change_capacity_ge_sz();
+        }
     }
 
     //Modifiers
@@ -400,18 +451,65 @@ public:
       size_ = new_size;
     }
 
-    void emplace(size_t idx, param_type v){
-      if ( size_ == capacity_){
+    void emplace(size_t idx, param_type v)
+    {
+      if ( size_ == capacity_)
+      {
         capacity_ += alloc_page_;
         alloc_page_ *= 2;
-        enlarge();
+        change_capacity_ge_sz();
       }
 
-      idx -=1;
+      //idx -=1;
+
       __m_uninitialized_move_n(buffer_ + idx+1, buffer_ + idx, size_ - idx);
+
+
       __m_construct(buffer_ + idx, v);
       ++size_;
     }
+
+
+    void emplace(iterator pos, param_type v)
+    {
+
+    	int idx = pos.get_data() - buffer_;
+
+      if ( size_ == capacity_)
+      {
+        capacity_ += alloc_page_;
+        alloc_page_ *= 2;
+        change_capacity_ge_sz();
+      }
+
+      //T* p = pos.get_data();
+
+     // __m_uninitialized_move_n(p+1, p, size_ - (p-buffer_) );
+
+      __m_uninitialized_move_n(buffer_ + idx+1, buffer_ + idx, size_ - idx);
+
+
+      __m_construct(buffer_ + idx, v);
+      ++size_;
+    }
+
+
+
+    iterator erase( iterator pos )
+    {
+    	T* p = pos.get_data();
+    	if ( p >= buffer_ && p < (buffer_ + size_) )
+    	{
+            __m_destruct(p);
+            __m_uninitialized_move(p, p + 1, buffer_ + size_);
+            --size_;
+            return iterator(p);
+    	}
+    	else
+    		return iterator(buffer_ + size_);
+    }
+
+
 
     void push_bask(param_type v)
     {
@@ -419,45 +517,15 @@ public:
       {
         capacity_ += alloc_page_;
         alloc_page_ *= 2;
-        enlarge();
+        change_capacity_ge_sz();
       }
       __m_construct(buffer_ + size_, v);
       ++size_;
     }
 
-    template <typename K>
-    class Iterator
-    {
-        K* cur;
-    public:
-        Iterator (K* cur_) : cur(cur_)
-        {}
-
-        K& operator+ (int n) { return *(cur + n); }
-        K& operator- (int n) { return *(cur - n); }
-
-        K& operator++ (int) { return *cur++; }
-        K& operator-- (int) { return *cur--; }
-        K& operator++ ()    { return *++cur; }
-        K& operator-- ()    { return *--cur; }
-
-        bool operator!= (const Iterator& it) {return cur != it.cur; }
-        bool operator== (const Iterator& it) {return cur == it.cur; }
-        K& operator* () {return *cur; }
-    };
-
-    typedef Iterator<value_type> iterator;
-    typedef Iterator<const value_type> const_iterator;
-
-    iterator begin()              { return iterator(buffer_); }
-    iterator end()                { return iterator(buffer_ + size_); }
-    const_iterator cbegin() const { return const_iterator(buffer_); }
-    const_iterator cend()   const { return const_iterator(buffer_ + size_);}
-
-
 
 private:
-    void enlarge()
+    void change_capacity_ge_sz()
     {
       T* p = static_cast<T*>(__A::alloc(capacity_ * sizeof(T)));
       try

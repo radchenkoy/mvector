@@ -180,15 +180,24 @@ TEST_F(MvectorCapacityTest, Is_mv1_Reserve)
 	EXPECT_EQ(mv1.capacity(), 32);
 }
 
+TEST_F(MvectorCapacityTest, Is_mv1_Shrink_to_fit)
+{
+	mv1.reserve(32);
+	mv1.shrink_to_fit();
+	EXPECT_EQ(mv1.size(), 10);
+	EXPECT_EQ(mv1.capacity(), 10);
+}
+
 
 // 5. Modifiers                        ----------
 
 class MvectorModifiersTest : public ::testing::Test {
  protected:
 	MvectorModifiersTest()
-	: mv1(100) {}
+	: mv1(100), mv2{0,1,2,3,4,5,6,7,8,9} {}
 
 	Mvector<int> mv1;
+	Mvector<int> mv2;
 };
 
 TEST_F(MvectorModifiersTest, mv1_Resize)
@@ -216,6 +225,24 @@ TEST_F(MvectorModifiersTest, mv1_Push_back)
 }
 
 
+#include <iostream>
+using namespace std;
+
+TEST_F(MvectorModifiersTest, mv1_Emplace)
+{
+	mv2.emplace(mv2.begin()+3, 77);
+	EXPECT_EQ(mv2.size(), 11);
+	EXPECT_GE(mv2.capacity(), 11);
+}
+
+TEST_F(MvectorModifiersTest, mv2_Erase)
+{
+	mv2.erase( mv2.begin() );
+	EXPECT_EQ(mv2.size(), 9);
+	EXPECT_GE(mv2.capacity(), 9);
+}
+
+
 // 6. Iterator                         ----------
 
 class MvectorIteratorTest : public ::testing::Test {
@@ -235,30 +262,19 @@ TEST_F(MvectorIteratorTest, mv1_fill_range)
 
 // 7. Chrono                           ----------
 
-//class MvectorCronoTest : public ::testing::Test {
-// protected:
-//	MvectorCronoTest()
-//	: mv1(1000000) {}
-//
-//	Mvector<int> mv1;
-//};
-
-#include <iostream>
 TEST(MvectorChronoTest, mv1_compare_with_std_vector)
 {
 	auto start2  = std::chrono::steady_clock::now();
-	std::vector<int> sv1(20000000);
+	std::vector<int> sv1(200000000);
 	std::iota(sv1.begin(), sv1.end(), 0);
 	auto stop2 = std::chrono::steady_clock::now();
 	auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(stop2 - start2);
 
 	auto start1  = std::chrono::steady_clock::now();
-	Mvector<int> mv1(20000000);
+	Mvector<int> mv1(200000000);
 	std::iota(mv1.begin(), mv1.end(), 0);
 	auto stop1 = std::chrono::steady_clock::now();
 	auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(stop1 - start1);
-
-	std::cout << "\n -------- " << elapsed1.count() << " ---- "  << elapsed2.count() << " -----\n\n";
 
 	EXPECT_LE(elapsed1, elapsed2);
 }
